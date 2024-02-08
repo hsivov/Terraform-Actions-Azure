@@ -5,6 +5,12 @@ terraform {
       version = "=3.0.0"
     }
   }
+  backend "azurerm" {
+    resource_group_name  = "StorageRG"
+    storage_account_name = "taskboardhstorage"
+    container_name       = "taskboardcontainer"
+    key                  = "terraform.tfstate"
+  }
 }
 
 # Configure the Microsoft Azure Provider
@@ -18,12 +24,12 @@ resource "random_integer" "ri" {
 }
 
 resource "azurerm_resource_group" "rg" {
-  name     = var.resource_group_name
+  name     = "${var.resource_group_name}-${random_integer.ri.result}"
   location = var.resource_group_location
 }
 
 resource "azurerm_service_plan" "asp" {
-  name                = var.app_service_plan
+  name                = "${var.app_service_plan}-${random_integer.ri.result}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   os_type             = "Linux"
@@ -31,7 +37,7 @@ resource "azurerm_service_plan" "asp" {
 }
 
 resource "azurerm_linux_web_app" "alwa" {
-  name                = var.app_service_name
+  name                = "${var.app_service_name}-${random_integer.ri.result}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_service_plan.asp.location
   service_plan_id     = azurerm_service_plan.asp.id
@@ -51,7 +57,7 @@ resource "azurerm_linux_web_app" "alwa" {
 }
 
 resource "azurerm_mssql_server" "mssql" {
-  name                         = var.sql_server_name
+  name                         = "${var.sql_server_name}-${random_integer.ri.result}"
   resource_group_name          = azurerm_resource_group.rg.name
   location                     = azurerm_resource_group.rg.location
   version                      = "12.0"
@@ -60,7 +66,7 @@ resource "azurerm_mssql_server" "mssql" {
 }
 
 resource "azurerm_mssql_database" "db" {
-  name           = var.sql_database_name
+  name           = "${var.sql_database_name}-${random_integer.ri.result}"
   server_id      = azurerm_mssql_server.mssql.id
   collation      = "SQL_Latin1_General_CP1_CI_AS"
   license_type   = "LicenseIncluded"
@@ -70,7 +76,7 @@ resource "azurerm_mssql_database" "db" {
 }
 
 resource "azurerm_mssql_firewall_rule" "example" {
-  name             = var.firewall_rule_name
+  name             = "${var.firewall_rule_name}-${random_integer.ri.result}"
   server_id        = azurerm_mssql_server.mssql.id
   start_ip_address = "0.0.0.0"
   end_ip_address   = "0.0.0.0"
